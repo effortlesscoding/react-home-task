@@ -1,13 +1,13 @@
-import rxjs from 'rxjs';
-import operators from 'rxjs/operators';
+import { Observable, of } from 'rxjs';
+import { concatMap, delay } from 'rxjs/operators';
 import ws from 'ws';
 
 type Sensor = {
-    id: string;
-    name: string;
-    connected: boolean;
-    unit: string;
-    value: string | null;
+  id: string;
+  name: string;
+  connected: boolean;
+  unit: string;
+  value: string | null;
 }
 
 type IOTMessage = {
@@ -16,13 +16,13 @@ type IOTMessage = {
 }
 
 const sensors: Sensor[] = [
-    { id: "0", name: "Temperature", connected: !1, unit: "°C", value: "15" },
-    { id: "1", name: "Pressure", connected: !1, unit: "kPa", value: "101.325" },
-    { id: "2", name: "Humidity", connected: !1, unit: "%", value: "45" },
-    { id: "3", name: "PM2.5", connected: !1, unit: "PM2.5", value: "50" },
-    { id: "4", name: "PM10", connected: !1, unit: "PM10", value: "43" },
-    { id: "5", name: "Wind", connected: !1, unit: "m/s", value: "7" },
-  ]
+  { id: "0", name: "Temperature", connected: !1, unit: "°C", value: "15" },
+  { id: "1", name: "Pressure", connected: !1, unit: "kPa", value: "101.325" },
+  { id: "2", name: "Humidity", connected: !1, unit: "%", value: "45" },
+  { id: "3", name: "PM2.5", connected: !1, unit: "PM2.5", value: "50" },
+  { id: "4", name: "PM10", connected: !1, unit: "PM10", value: "43" },
+  { id: "5", name: "Wind", connected: !1, unit: "m/s", value: "7" },
+]
 
 const generateSensor = function (e: Sensor): Sensor {
   return {
@@ -36,67 +36,75 @@ const generateSensor = function (e: Sensor): Sensor {
   };
 };
 
-  let connectedSensors: string[] = [];
+let connectedSensors: string[] = [];
 
-  const isSensorConnected = function (sensorId: string) {
-    return connectedSensors.includes(sensorId);
-  };
+const isSensorConnected = function (sensorId: string) {
+  return connectedSensors.includes(sensorId);
+};
 
-  const PORT: number = Number(process.env.PORT) || 5001;
+const PORT: number = Number(process.env.PORT) || 5001;
 
-  const wss = new ws.Server({ port: PORT });
+const wss = new ws.Server({ port: PORT });
 
-  let initialized = !1;
+let initialized = !1;
 
-  wss.on("connection", function (r) {
-    r.on("message", function (n) {
-      let t: IOTMessage | null = null;
-      try {
-        t = JSON.parse(n.toString()) as IOTMessage;
-      } catch (e) {
-        console.error('error::', e);
-        t = n as unknown as IOTMessage;
-      }
-      console.log("Client -> Server: ", t);
+wss.on("connection", function (r) {
+  r.on("message", function (n) {
+    let t: IOTMessage | null = null;
+    try {
+      t = JSON.parse(n.toString()) as IOTMessage;
+    } catch (e) {
+      console.error('error::', e);
+      t = n as unknown as IOTMessage;
+    }
+    console.log("Client -> Server: ", t);
 
-      if (t?.command === 'disconnect' && t.id) {
-        connectedSensors = connectedSensors.filter(function (e) {
-          return e !== t.id;
-        })
-      } else if (t?.command === 'disconnect' && t.id) {
-        if (!connectedSensors.includes(t.id)) {
-          connectedSensors.push(t.id)
-        }
-      }
-    });
-
-    sensors.forEach(function (e) {
-        r.send(JSON.stringify(generateSensor(e)));
-    });
-
-    if (!initialized) {
-      new rxjs.Observable<Sensor>(function (n) {
-        const interval = setInterval(function () {
-          sensors.forEach(function (e) {
-            n.next(generateSensor(e));
-          });
-        }, 100);
-        return function () {
-          clearInterval(interval);
-        };
+    if (t?.command === 'disconnect' && t.id) {
+      connectedSensors = connectedSensors.filter(function (e) {
+        return e !== t.id;
       })
-        .pipe(
-          operators.concatMap((e) => rxjs.of(e).pipe(operators.delay(5 + 5 * Math.random())))
-        )
-        .subscribe(function (n) {
-          if (connectedSensors.includes(n.id)) {
-            wss.clients.forEach(function (e) {
-              return e.send(JSON.stringify(n));
-            });
-          }
-        });
-
-      initialized = true;
-    };
+      const sensor = sensors.find(function (e) {
+        return e.id === t.id;
+      });
+      if (sensor) {
+        r.send(
+          JSON.stringify(generateSensor(sensor))
+        );
+      }
+    } else if (t?.command === 'connect' && t.id) {
+      if (!connectedSensors.includes(t.id)) {
+        connectedSensors.push(t.id);
+      }
+    }
   });
+
+  sensors.forEach(function (e) {
+    r.send(JSON.stringify(generateSensor(e)));
+  });
+
+  if (!initialized) {
+    new Observable<Sensor>(function (n) {
+      const interval = setInterval(function () {
+        sensors.forEach(function (e) {
+          n.next(generateSensor(e));
+        });
+      }, 100);
+      return function () {
+        clearInterval(interval);
+      };
+    })
+      .pipe(
+        concatMap((e) => of(e).pipe(delay(5 + 5 * Math.random())))
+      )
+      .subscribe(function (n) {
+        if (connectedSensors.includes(n.id)) {
+          wss.clients.forEach(function (e) {
+            return e.send(JSON.stringify(n));
+          });
+        }
+      });
+
+    initialized = true;
+  };
+});
 console.log("Server started on: ws://localhost:" + PORT);

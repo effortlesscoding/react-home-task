@@ -6,6 +6,7 @@ This application retrieves a list of sensors and allows you to connect / disconn
 
 # How to run this application
 
-Go to server/ and follow their Readme.md.
+Go to server/ and follow their Readme.md. The original JS file was translated to Typescript so modify it as you wish.
 
 Then, go to client/ and follow their Readme.md. 
+

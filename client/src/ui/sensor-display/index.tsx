@@ -9,27 +9,31 @@ interface Props {
 }
 
 const SensorDisplay = ({
-    sensor,
+  sensor,
 }: Props) => {
   const ws = useContext(WebsocketContext);
 
   const onConnect = () => {
-    ws?.sendMessage(JSON.stringify({ command: "connect", id: sensor.id }));
+    if (!sensor.connected) {
+      ws?.sendMessage(JSON.stringify({ command: "connect", id: sensor.id }));
+    }
   }
 
   const onDisconnect = () => {
-    ws?.sendMessage(JSON.stringify({ command: "disconnect", id: sensor.id }));
+    if (sensor.connected) {
+      ws?.sendMessage(JSON.stringify({ command: "disconnect", id: sensor.id }));
+    }
   }
 
   return (
-    <Container>
+    <Container data-testid={`sensor-unit`}>
       <SensorName>{sensor.name}</SensorName>
       <ConnectionBlock>
         <ConnectionStatus className={sensor.connected ? 'connected' : 'disconnected'} /><span>{sensor.connected ? 'Connected' : 'Disconnected'}</span>
       </ConnectionBlock>
       <p>{sensor.value ?? '- -'} {sensor.unit}</p>
-      <Button className="secondary" type="button" onClick={onDisconnect}>Disconnect</Button>
-      <Button className="primary" type="button" onClick={onConnect}>Connect</Button>
+      <Button data-testid="disconnect-btn" className="secondary" type="button" onClick={onDisconnect}>Disconnect</Button>
+      <Button data-testid="connect-btn" className="primary" type="button" onClick={onConnect}>Connect</Button>
     </Container>
   )
 }

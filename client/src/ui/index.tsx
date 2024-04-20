@@ -3,6 +3,7 @@ import { config } from '../common/constants/config';
 import { Sensor } from '../common/types';
 import SensorDisplay from './sensor-display';
 import { WebsocketContext } from '../common/websocketsContext';
+import { SensorsContainer, SensorsHeader } from './styled';
 
 enum ReadyState {
   UNINSTANTIATED = -1,
@@ -84,15 +85,17 @@ function App() {
   return (
     <WebsocketContext.Provider value={{ sendMessage }}>
       <div className="App">
-        <header className="App-header">
-          State: {readyStateToMessage[state]}
-        </header>
-        {Object.values(sensors).map(sensor => (
-          <SensorDisplay
-            key={sensor.id}
-            sensor={sensor}
-          />
-        ))}
+        <SensorsHeader>
+          <h3>Server connection: {readyStateToMessage[state]}</h3>
+        </SensorsHeader>
+        <SensorsContainer>
+          {Object.values(sensors).map(sensor => (
+            <SensorDisplay
+              key={sensor.id}
+              sensor={sensor}
+            />
+          ))}
+        </SensorsContainer>
       </div>
     </WebsocketContext.Provider>
   );

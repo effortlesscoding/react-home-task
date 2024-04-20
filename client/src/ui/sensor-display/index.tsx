@@ -1,6 +1,8 @@
 import React, { useContext } from 'react';
 import { Sensor } from '../../common/types';
 import { WebsocketContext } from '../../common/websocketsContext';
+import { Container, ConnectionStatus, SensorName, ConnectionBlock } from './styled';
+import { Button } from '../../common/ui/button';
 
 interface Props {
   sensor: Sensor;
@@ -20,16 +22,15 @@ const SensorDisplay = ({
   }
 
   return (
-    <div>
-      {JSON.stringify(sensor)}
-      <p>#{sensor.id} {sensor.name}</p>
-      <div>
-        Connection: <div className={sensor.connected ? 'connected' : 'disconnected'} >{sensor.connected ? '+' : '-'}</div>
-      </div>
-      <p>{sensor.value}{sensor.unit}</p>
-      <button type="button" onClick={onDisconnect}>Disconnect</button>
-      <button type="button" onClick={onConnect}>Connect</button>
-    </div>
+    <Container>
+      <SensorName>{sensor.name}</SensorName>
+      <ConnectionBlock>
+        <ConnectionStatus className={sensor.connected ? 'connected' : 'disconnected'} /><span>{sensor.connected ? 'Connected' : 'Disconnected'}</span>
+      </ConnectionBlock>
+      <p>{sensor.value ?? '- -'} {sensor.unit}</p>
+      <Button className="secondary" type="button" onClick={onDisconnect}>Disconnect</Button>
+      <Button className="primary" type="button" onClick={onConnect}>Connect</Button>
+    </Container>
   )
 }
 

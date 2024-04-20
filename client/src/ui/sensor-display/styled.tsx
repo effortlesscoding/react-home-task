@@ -39,8 +39,8 @@ export const Container = styled.div`
   background-color: white;
   border: 1px solid ${palette.primary.main};
   padding: 0.5rem;
-  max-width: 25vw;
-  min-width: 30%;
+  max-width: 300px;
+  min-width: 30vw;
   flex: 1;
 
   button {

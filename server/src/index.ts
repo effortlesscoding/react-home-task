@@ -99,3 +99,4 @@ const generateSensor = function (e: Sensor): Sensor {
       initialized = true;
     };
   });
+console.log("Server started on: ws://localhost:" + PORT);
